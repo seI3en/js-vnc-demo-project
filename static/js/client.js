@@ -388,21 +388,14 @@
   };
 
   Screen.prototype.addMouseHandler = function (cb) {
-    var state = 0;
     this._canvas.addEventListener('mousedown', function (e) {
-      state = 1;
-      cb.call(null, e.pageX, e.pageY, state);
+      cb.call(null, e.pageX, e.pageY, 1);
       e.preventDefault();
     }, false);
     this._canvas.addEventListener('mouseup', function (e) {
-      state = 0;
-      cb.call(null, e.pageX, e.pageY, state);
+      cb.call(null, e.pageX, e.pageY, 0);
       e.preventDefault();
     }, false);
-    this._canvas.addEventListener('mousemove', function (e) {
-      cb.call(null, e.pageX, e.pageY, state);
-      e.preventDefault();
-    });
   };
 
   Screen.prototype.addKeyboardHandlers = function (cb) {
@@ -422,15 +415,14 @@
 
   function Client(screen) {
     this._screen = screen;
-    this._scaleFactor = 1;
   }
 
   Client.prototype._initEventListeners = function () {
     var self = this;
     this._screen.addMouseHandler(function (x, y, button) {
       self._socket.emit('mouse', {
-        x: x / self._scaleFactor,
-        y: y / self._scaleFactor,
+        x: x,
+        y: y,
         button: button
       });
     });
@@ -452,7 +444,7 @@
       port: config.port,
       password: config.password
     });
-    this._addHandlers(config.init);
+    this._addHandlers(config.callback);
     this._initEventListeners();
   };
 
@@ -462,7 +454,6 @@
       var canvas = self._screen.getCanvas();
       canvas.width = config.width;
       canvas.height = config.height;
-      self._scaleScreen(config);
       if (typeof callback === 'function') {
         callback();
       }
@@ -470,18 +461,6 @@
     this._socket.on('frame', function (frame) {
       self._screen.drawRect(frame);
     });
-  };
-
-  Client.prototype._scaleScreen = function (config) {
-    var sw = screen.availWidth / config.width;
-    var sh = screen.availHeight / config.height;
-    var s = Math.min(sw, sh);
-    this._scaleFactor = s;
-    var canvas = this._screen.getCanvas();
-    var transform = 'scale(' + s + ')';
-    canvas.style.mozTransform = transform;
-    canvas.style.webkitTransform = transform;
-    canvas.style.transform = transform;
   };
 
   Client.prototype._toRfbKeyCode = function (code, shift) {
@@ -501,7 +480,7 @@
       host: document.getElementById('host').value,
       port: parseInt(document.getElementById('port').value, 10),
       password: document.getElementById('password').value,
-      init: function () {
+      callback: function () {
         var form = document.getElementById('form-wrapper');
         form.classList.add('form-wrapper-hidden');
         canvas.style.opacity = 1;
