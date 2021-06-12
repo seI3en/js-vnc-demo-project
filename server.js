@@ -1,5 +1,3 @@
-'use strict';
-
 var RFB = require('rfb'),
     io = require('socket.io'),
     Png = require('./node_modules/node-png/build/Release/png').Png,
@@ -10,17 +8,22 @@ var RFB = require('rfb'),
       HTTP_PORT: 8090
     };
 
-function encodeFrame(rect) {
-  var rgb = new Buffer(rect.width * rect.height * 3, 'binary'),
-      offset = 0;
-
-  for (var i = 0; i < rect.fb.length; i += 4) {
-    rgb[offset++] = rect.fb[i + 2];
-    rgb[offset++] = rect.fb[i + 1];
-    rgb[offset++] = rect.fb[i];
+function createRfbConnection(config, socket) {
+  try {
+    var r = RFB({
+      host: config.host,
+      port: config.port,
+      password: config.password,
+      securityType: 'vnc',
+    });
+    setTimeout(function () {
+      r.requestRedraw();
+    }, 200);
+  } catch (e) {
+    console.log(e);
   }
-  var image = new Png(rgb, rect.width, rect.height, 'rgb');
-  return image.encodeSync();
+  addEventHandlers(r, socket);
+  return r;
 }
 
 function addEventHandlers(r, socket) {
@@ -79,24 +82,17 @@ function addEventHandlers(r, socket) {
   });
 }
 
+function encodeFrame(rect) {
+  var rgb = new Buffer(rect.width * rect.height * 3, 'binary'),
+      offset = 0;
 
-function createRfbConnection(config, socket) {
-  var r;
-  try {
-    r = RFB({
-      host: config.host,
-      port: config.port,
-      password: config.password,
-      securityType: 'vnc',
-    });
-    setTimeout(function () {
-      r.requestRedraw();
-    }, 200);
-  } catch (e) {
-    console.log(e);
+  for (var i = 0; i < rect.fb.length; i += 4) {
+    rgb[offset++] = rect.fb[i + 2];
+    rgb[offset++] = rect.fb[i + 1];
+    rgb[offset++] = rect.fb[i];
   }
-  addEventHandlers(r, socket);
-  return r;
+  var image = new Png(rgb, rect.width, rect.height, 'rgb');
+  return image.encodeSync();
 }
 
 function disconnectClient(socket) {
@@ -130,11 +126,11 @@ function disconnectClient(socket) {
       });
       socket.on('keyboard', function (evnt) {
         r.sendKey(evnt.keyCode, evnt.isDown);
-        console.info('Keyboard input');
+        console.info('Keyboard input')
       });
       socket.on('disconnect', function () {
         disconnectClient(socket);
-        console.info('Client disconnected');
+        console.info('Client disconnected')
       });
     });
   });
