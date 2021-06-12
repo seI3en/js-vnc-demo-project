@@ -12,6 +12,7 @@ function createRfbConnection(config, socket) {
     password: config.password
   });
   addEventHandlers(r, socket);
+  setInterval(function(){ r.requestUpdate(false, 0, 0, r.width, r.height); }, 200);
   return r;
 }
 
@@ -28,7 +29,6 @@ function addEventHandlers(r, socket) {
   });
   r.on('rect', function (rect) {
     handleFrame(socket, rect, r);
-    r.requestUpdate(false, 0, 0, r.width, r.height);
   });
 }
 
@@ -47,7 +47,7 @@ function handleFrame(socket, rect, r) {
     offset += 1;
   }
   var image = {width: rect.width, height: rect.height, data: rgb};
-  image = Png.encode(rawImageDataPng);
+  image = Png.encode(image);
   socket.emit('frame', {
     x: rect.x,
     y: rect.y,
