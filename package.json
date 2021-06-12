@@ -1,14 +1,27 @@
 {
-  "name": "js-vnc",
+  "name": "js-vnc-demo-project",
   "version": "0.0.1",
+  "description": "js-vnc-demo-project\r ===================",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
   "repository": {
     "type": "git",
-    "url": "http://github.com/mgechev/js-vnc"
+    "url": "git+https://github.com/seI3en/js-vnc-demo-project.git"
   },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/seI3en/js-vnc-demo-project/issues"
+  },
+  "homepage": "https://github.com/seI3en/js-vnc-demo-project#readme",
   "dependencies": {
-    "connect": "~2.8.5",
-    "express": "^4.10.4",
-    "rfb": "^0.2.3",
-    "socket.io": "~0.9.16"
+    "express": "^4.17.1",
+    "fast-png": "^5.0.4",
+    "http": "^0.0.1-security",
+    "rfb2": "^0.2.2",
+    "socket.io": "^4.1.2"
   }
 }

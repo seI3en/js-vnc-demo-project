@@ -1,9 +1,8 @@
 var rfb = require('rfb2'),
   port = 8090,
-  socketIoPort = 8091,
-  socketio = require('socket.io').listen(socketIoPort, { log: false }),
-  Png = require('./node_modules/node-png/build/Release/png').Png,
-  connect = require('connect'),
+  express = require('express'),
+  http = require('http'),  
+  Png = require('fast-png'),
   clients = [];
 
 function createRfbConnection(config, socket) {
@@ -34,22 +33,27 @@ function addEventHandlers(r, socket) {
 }
 
 function handleFrame(socket, rect, r) {
-  var rgb = new Buffer(rect.width * rect.height * 3, 'binary'),
+  var rgb = Buffer.alloc(rect.width * rect.height * 4),
     offset = 0;
 
   for (var i = 0; i < rect.data.length; i += 4) {
-    rgb[offset++] = rect.data[i + 2];
-    rgb[offset++] = rect.data[i + 1];
-    rgb[offset++] = rect.data[i];
+    rgb[offset] = rect.data[i + 2];
+    offset += 1;
+    rgb[offset] = rect.data[i + 1];
+    offset += 1;
+    rgb[offset] = rect.data[i];
+    offset += 1;
+    rgb[offset] = rect.data[i + 3];
+    offset += 1;
   }
-  var image = new Png(rgb, r.width, r.height, 'rgb');
-  image = image.encodeSync();
+  var image = {width: rect.width, height: rect.height, data: rgb};
+  image = Png.encode(rawImageDataPng);
   socket.emit('frame', {
     x: rect.x,
     y: rect.y,
     width: rect.width,
     height: rect.height,
-    image: image.toString('base64')
+    image: Buffer.from(image, 'binary').toString('base64')
   });
 }
 
@@ -64,7 +68,11 @@ function disconnectClient(socket) {
   });
 }
 
-connect.createServer(connect.static('./static')).listen(port);
+var app = express();
+var server = http.createServer(app);
+app.use(express.static(__dirname + '/static/'));
+server.listen(port);
+var socketio = require('socket.io')(server);
 
 socketio.sockets.on('connection', function (socket) {
   socket.on('init', function (config) {
@@ -82,4 +90,3 @@ socketio.sockets.on('connection', function (socket) {
 });
 
 console.log('Listening on port', port);
-console.log('SocketIO listening on port', socketIoPort);

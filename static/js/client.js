@@ -70,7 +70,7 @@
   };
 
   Client.prototype.connect = function (config) {
-    this._socket = io.connect(Config.URL);
+    this._socket = io();
     this._socket.emit('init', {
       host: config.host,
       port: config.port,
