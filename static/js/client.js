@@ -460,27 +460,23 @@
       port: config.port,
       password: config.password
     });
-    return this._addHandlers();
+    this._addHandlers(config.init);
+    this._initEventListeners();
   };
 
-  Client.prototype._addHandlers = function () {
+  Client.prototype._addHandlers = function (callback) {
     var self = this;
-    return new Promise(function (resolve, reject) {
-      var timeout = setTimeout(function () {
-        reject();
-      }, 2000);
-      self._socket.on('init', function (config) {
-        var canvas = self._screen.getCanvas();
-        canvas.width = config.width;
-        canvas.height = config.height;
-        self._scaleScreen(config);
-        self._initEventListeners();
-        resolve();
-        clearTimeout(timeout);
-      });
-      self._socket.on('frame', function (frame) {
-        self._screen.drawRect(frame);
-      });
+    this._socket.on('init', function (config) {
+      var canvas = self._screen.getCanvas();
+      canvas.width = config.width;
+      canvas.height = config.height;
+      self._scaleScreen(config);
+      if (typeof callback === 'function') {
+        callback();
+      }
+    });
+    this._socket.on('frame', function (frame) {
+      self._screen.drawRect(frame);
     });
   };
 
@@ -527,10 +523,11 @@
     client.connect({
       host: document.getElementById('host').value,
       port: parseInt(document.getElementById('port').value, 10),
-      password: document.getElementById('password').value
-    }).then(function () {
-      document.getElementById('form-wrapper').style.display = 'none';
-      document.getElementById('screen-wrapper').style.display = 'block';
+      password: document.getElementById('password').value,
+      init: function () {
+        document.getElementById('form-wrapper').style.display = 'none';
+        document.getElementById('screen-wrapper').style.display = 'block';
+      }
     });
   }, false);
 }());
